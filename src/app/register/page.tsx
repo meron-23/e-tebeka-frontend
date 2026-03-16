@@ -1,7 +1,7 @@
+// app/register/page.tsx
 "use client";
 
-import { Suspense } from "react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,6 +11,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+
+// 1. Force dynamic rendering to prevent build-time bailout errors
+export const dynamic = "force-dynamic";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,14 +28,14 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-// Move the main component logic to a separate inner component
 function RegisterFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const initialTier = (searchParams.get("tier") as "A" | "B" | "C") || "C";
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
@@ -70,7 +73,7 @@ function RegisterFormContent() {
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-20 pb-0">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl space-y-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl xl:p-10"
@@ -79,7 +82,7 @@ function RegisterFormContent() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 mb-4">
             <UserPlus className="h-6 w-6 text-indigo-600" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit">Create Account</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Create Account</h2>
           <p className="mt-2 text-sm text-slate-600">Join the digital legal repository of Ethiopia.</p>
         </div>
 
@@ -91,7 +94,6 @@ function RegisterFormContent() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Tier Selection */}
           <div className="grid grid-cols-3 gap-4">
             {["C", "B", "A"].map((t) => (
               <button
@@ -100,8 +102,8 @@ function RegisterFormContent() {
                 onClick={() => setValue("tier", t as any)}
                 className={cn(
                   "rounded-xl border p-4 text-center transition-all",
-                  selectedTier === t 
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md" 
+                  selectedTier === t
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md"
                     : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
                 )}
               >
@@ -205,17 +207,22 @@ function RegisterFormContent() {
   );
 }
 
-// Main page component with Suspense boundary
+// 2. Separate fallback for cleaner code
+function RegisterLoading() {
+  return (
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        <p className="mt-4 text-slate-600">Loading registration form...</p>
+      </div>
+    </div>
+  );
+}
+
+// 3. Final Page Export with pure Suspense boundary
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading registration form...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<RegisterLoading />}>
       <RegisterFormContent />
     </Suspense>
   );
