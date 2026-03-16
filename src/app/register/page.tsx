@@ -1,5 +1,7 @@
+// app/register/page.tsx
 "use client";
 
+import { Suspense } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,13 +26,14 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+// Move the main component logic to a separate inner component
+function RegisterFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const initialTier = (searchParams.get("tier") as "A" | "B" | "C") || "C";
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
@@ -68,7 +71,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-20 pb-0">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl space-y-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl xl:p-10"
@@ -98,8 +101,8 @@ export default function RegisterPage() {
                 onClick={() => setValue("tier", t as any)}
                 className={cn(
                   "rounded-xl border p-4 text-center transition-all",
-                  selectedTier === t 
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md" 
+                  selectedTier === t
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md"
                     : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
                 )}
               >
@@ -200,5 +203,21 @@ export default function RegisterPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading registration form...</p>
+        </div>
+      </div>
+    }>
+      <RegisterFormContent />
+    </Suspense>
   );
 }
