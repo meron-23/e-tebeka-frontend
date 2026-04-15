@@ -3,11 +3,25 @@
 :root {
   --background: #f8fafc; /* slate-50 */
   --foreground: #020617; /* slate-950 */
+  
+  /* E-Tebeka Design System Colors */
+  --primary-green: #1a5d3c;  /* Matches Supreme Court logo color */
+  --secondary-blue: #2c5f8d;
+  --accent-gold: #f4a261;
+  --light-gray: #f8f9fa;
+  --dark-gray: #2d3748;
+  --text-primary: #1a202c;
+  --text-secondary: #64748b;
+  --court-blue: #0f4c75;  /* Additional court-themed color */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary-green);
+  --color-secondary: var(--secondary-blue);
+  --color-accent: var(--accent-gold);
+  --color-court: var(--court-blue);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
@@ -27,9 +41,9 @@ input, textarea, select {
 }
 
 input:focus, textarea:focus {
-  border-color: #6366f1; /* indigo-500 */
+  border-color: #14b8a6; /* teal-500 */
   outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 2px rgba(26, 93, 60, 0.1);
 }
 
 input::placeholder, textarea::placeholder {

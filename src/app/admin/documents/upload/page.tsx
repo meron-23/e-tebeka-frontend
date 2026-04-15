@@ -81,11 +81,11 @@ export default function AdminUploadPage() {
         </div>
         <div className="flex gap-4">
           <div className="flex flex-col items-end">
-            <span className="text-xs font-bold text-indigo-600">Admin Status</span>
+            <span className="text-xs font-bold text-teal-600">Admin Status</span>
             <span className="text-sm text-slate-900 font-medium">System Operator</span>
           </div>
-          <div className="h-10 w-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-            <Settings className="h-5 w-5 text-indigo-600" />
+          <div className="h-10 w-10 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center">
+            <Settings className="h-5 w-5 text-teal-600" />
           </div>
         </div>
       </div>
@@ -94,18 +94,18 @@ export default function AdminUploadPage() {
         {/* Upload Card */}
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <Upload className="h-5 w-5 text-indigo-600" /> 1. Upload PDF Gazette
+            <Upload className="h-5 w-5 text-teal-600" /> 1. Upload PDF Gazette
           </h2>
 
           <div className="space-y-6">
-            <div className="relative rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center transition-all hover:border-indigo-200 group/drop">
+            <div className="relative rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center transition-all hover:border-teal-200 group/drop">
               <input
                 type="file"
                 accept=".pdf"
                 onChange={handleFileChange}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4 group-hover/drop:text-indigo-400 transition-colors" />
+              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4 group-hover/drop:text-teal-400 transition-colors" />
               <p className="text-slate-900 font-medium">
                 {file ? file.name : "Click or drag to upload PDF"}
               </p>
@@ -122,7 +122,7 @@ export default function AdminUploadPage() {
               <button
                 onClick={handleUpload}
                 disabled={!file || isUploading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 font-bold text-white transition-all active:scale-95 disabled:opacity-50"
               >
                 {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Upload"}
               </button>
@@ -134,7 +134,7 @@ export default function AdminUploadPage() {
                 <button
                   onClick={handleProcess}
                   disabled={isProcessing}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 font-bold text-white transition-all active:scale-95 disabled:opacity-50"
                 >
                   {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Analyze with Gemini AI"}
                 </button>
@@ -146,12 +146,12 @@ export default function AdminUploadPage() {
         {/* Preview Card */}
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-indigo-600" /> 2. Preview & Verify
+            <CheckCircle className="h-5 w-5 text-teal-600" /> 2. Preview & Verify
           </h2>
 
           {isProcessing ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="h-10 w-10 text-indigo-600 animate-spin mb-4" />
+              <Loader2 className="h-10 w-10 text-teal-600 animate-spin mb-4" />
               <p className="text-slate-500 text-sm">Gemini AI is parsing the document...</p>
             </div>
           ) : geminiData ? (
@@ -181,7 +181,7 @@ export default function AdminUploadPage() {
                   <textarea
                     value={geminiData.title_en || ""}
                     onChange={(e) => setGeminiData({ ...geminiData, title_en: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-100 p-2 rounded text-sm text-slate-900 h-24 outline-none focus:border-indigo-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-100 p-2 rounded text-sm text-slate-900 h-24 outline-none focus:border-teal-500 font-medium"
                   />
                 </div>
 
@@ -190,7 +190,7 @@ export default function AdminUploadPage() {
                   <span className="text-xs font-semibold text-slate-500">Categories (AI Suggested)</span>
                   <div className="flex flex-wrap gap-2">
                     {geminiData.categories?.map((cat: string, i: number) => (
-                      <span key={i} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100 flex items-center gap-1">
+                      <span key={i} className="px-2 py-1 bg-teal-50 text-teal-700 text-[10px] font-bold rounded-lg border border-teal-100 flex items-center gap-1">
                         {cat}
                         <button
                           onClick={() => {
@@ -232,7 +232,7 @@ export default function AdminUploadPage() {
 
               <button
                 onClick={handleConfirm}
-                className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95"
+                className="w-full rounded-xl bg-teal-600 py-3 font-bold text-white shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95"
               >
                 Confirm & Publish
               </button>

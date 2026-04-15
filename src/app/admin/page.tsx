@@ -22,11 +22,11 @@ const adminSections = [
     description: "Upload new legal PDF gazettes and process them with Gemini AI.",
     href: "/admin/documents/upload",
     icon: Upload,
-    color: "indigo",
-    gradient: "from-indigo-50 to-white",
-    border: "border-indigo-100",
-    iconBg: "bg-indigo-100/50",
-    iconColor: "text-indigo-600",
+    color: "teal",
+    gradient: "from-teal-50 to-white",
+    border: "border-teal-100",
+    iconBg: "bg-teal-100/50",
+    iconColor: "text-teal-600",
     badge: "Core",
   },
   {
@@ -64,11 +64,14 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    // Optionally fetch quick stats from backend
+    // Fetch quick stats from backend
     api
       .get("/admin/stats")
       .then((r) => setStats(r.data))
-      .catch(() => {}); // graceful — stats are cosmetic
+      .catch((err) => {
+        console.error("Failed to fetch admin stats:", err);
+        // Keep default "—" values if stats fail to load
+      });
   }, []);
 
   return (
@@ -76,7 +79,7 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 py-1.5 text-xs font-semibold text-teal-700 mb-6">
             <ShieldCheck className="h-3 w-3" /> Admin Panel
           </div>
           <h1 className="text-5xl font-bold text-slate-900 font-outfit mb-3">
@@ -90,7 +93,7 @@ export default function AdminDashboard() {
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
-            { label: "Legal Documents", value: stats.totalDocuments, icon: FileText, color: "text-indigo-600" },
+            { label: "Legal Documents", value: stats.totalDocuments, icon: FileText, color: "text-teal-600" },
             { label: "Registered Users", value: stats.totalUsers, icon: Users, color: "text-emerald-600" },
             { label: "Pending Verifications", value: stats.pendingVerifications, icon: Clock, color: "text-amber-600" },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -112,7 +115,7 @@ export default function AdminDashboard() {
               <Link
                 key={href}
                 href={href}
-                className={`group relative rounded-3xl border ${border} bg-white p-7 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border-indigo-200`}
+                className={`group relative rounded-3xl border ${border} bg-white p-7 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border-teal-200`}
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className={`rounded-xl ${iconBg} p-3`}>

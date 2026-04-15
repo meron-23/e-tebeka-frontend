@@ -1,8 +1,7 @@
 // app/register/page.tsx
 "use client";
 
-import { Suspense } from "react";
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,6 +11,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+
+// 1. Force dynamic rendering to prevent build-time bailout errors
+export const dynamic = "force-dynamic";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -26,13 +28,20 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-// Move the main component logic to a separate inner component
 function RegisterFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.push("/dashboard");
+    }
+  }, [router]);
 
   const initialTier = (searchParams.get("tier") as "A" | "B" | "C") || "C";
 
@@ -49,7 +58,7 @@ function RegisterFormContent() {
     try {
       await api.post("/auth/register", data);
       setIsSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
+      setTimeout(() => { window.location.href = "/login"; }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed. Please try again.");
     } finally {
@@ -77,10 +86,10 @@ function RegisterFormContent() {
         className="w-full max-w-2xl space-y-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl xl:p-10"
       >
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 mb-4">
-            <UserPlus className="h-6 w-6 text-indigo-600" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 mb-4">
+            <UserPlus className="h-6 w-6 text-teal-600" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit">Create Account</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Create Account</h2>
           <p className="mt-2 text-sm text-slate-600">Join the digital legal repository of Ethiopia.</p>
         </div>
 
@@ -92,7 +101,6 @@ function RegisterFormContent() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Tier Selection */}
           <div className="grid grid-cols-3 gap-4">
             {["C", "B", "A"].map((t) => (
               <button
@@ -102,7 +110,7 @@ function RegisterFormContent() {
                 className={cn(
                   "rounded-xl border p-4 text-center transition-all",
                   selectedTier === t
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md"
+                    ? "border-teal-600 bg-teal-50 text-teal-600 shadow-md"
                     : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
                 )}
               >
@@ -119,7 +127,7 @@ function RegisterFormContent() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
               <input
                 {...register("full_name")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all font-medium"
                 placeholder="John Doe"
               />
               {errors.full_name && <p className="mt-1 text-xs text-red-500">{errors.full_name.message}</p>}
@@ -129,7 +137,7 @@ function RegisterFormContent() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
               <input
                 {...register("email")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all font-medium"
                 placeholder="name@example.com"
               />
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
@@ -140,7 +148,7 @@ function RegisterFormContent() {
               <input
                 {...register("password")}
                 type="password"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all font-medium"
                 placeholder="••••••••"
               />
               {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
@@ -150,7 +158,7 @@ function RegisterFormContent() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Phone (Optional)</label>
               <input
                 {...register("phone")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all font-medium"
                 placeholder="+251 ..."
               />
             </div>
@@ -161,14 +169,14 @@ function RegisterFormContent() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">University</label>
                   <input
                     {...register("university")}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-indigo-500 transition-all font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-teal-500 transition-all font-medium"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Student ID Number</label>
                   <input
                     {...register("student_id")}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-indigo-500 transition-all font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-teal-500 transition-all font-medium"
                   />
                 </div>
               </>
@@ -189,7 +197,7 @@ function RegisterFormContent() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 disabled:opacity-50"
+            className="flex w-full items-center justify-center rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95 disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Complete Registration"}
           </button>
@@ -197,7 +205,7 @@ function RegisterFormContent() {
 
         <p className="text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500 underline underline-offset-4 decoration-indigo-600/30 hover:decoration-indigo-600">
+          <Link href="/login" className="font-semibold text-teal-600 hover:text-teal-500 underline underline-offset-4 decoration-teal-600/30 hover:decoration-teal-600">
             Sign In
           </Link>
         </p>
@@ -206,17 +214,22 @@ function RegisterFormContent() {
   );
 }
 
-// Main page component with Suspense boundary
+// 2. Separate fallback for cleaner code
+function RegisterLoading() {
+  return (
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+        <p className="mt-4 text-slate-600">Loading registration form...</p>
+      </div>
+    </div>
+  );
+}
+
+// 3. Final Page Export with pure Suspense boundary
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading registration form...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<RegisterLoading />}>
       <RegisterFormContent />
     </Suspense>
   );

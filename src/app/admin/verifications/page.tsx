@@ -24,7 +24,10 @@ export default function AdminVerificationsPage() {
     api
       .get("/admin/verifications")
       .then((r) => setItems(r.data))
-      .catch(() => setError("Failed to load verifications. Ensure the backend is running."))
+      .catch((err) => {
+        console.error("Failed to load verifications:", err);
+        setError("Failed to load verifications. Ensure you have admin privileges and the backend is running.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,14 +44,14 @@ export default function AdminVerificationsPage() {
     <div className="min-h-screen bg-slate-50 px-4 py-14">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10">
-          <Link href="/admin" className="text-xs text-indigo-600 hover:underline mb-2 block">← Admin Dashboard</Link>
+          <Link href="/admin" className="text-xs text-teal-600 hover:underline mb-2 block">← Admin Dashboard</Link>
           <h1 className="text-4xl font-bold text-slate-900 font-outfit">Student Verifications</h1>
           <p className="text-slate-600 mt-1">Review and approve student ID verification requests.</p>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-32">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
           </div>
         ) : error ? (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-red-600 text-sm">{error}</div>
@@ -88,10 +91,10 @@ export default function AdminVerificationsPage() {
                     <td className="px-6 py-4">
                       {v.document_path && (
                         <a
-                          href={`http://localhost:8000${v.document_path}`}
+                          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${v.document_path}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-indigo-600 hover:underline"
+                          className="flex items-center gap-1 text-xs text-teal-600 hover:underline"
                         >
                           <Eye className="h-3 w-3" /> View
                         </a>
