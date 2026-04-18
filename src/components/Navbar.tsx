@@ -4,10 +4,11 @@ import Link from "next/link";
 import { Scale, LogIn, LogOut, Menu, X, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import type { SessionUser } from "@/lib/session";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 

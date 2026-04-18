@@ -9,11 +9,14 @@ import { motion } from "framer-motion";
 import { UserPlus, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "@/components/SessionProvider";
 import api from "@/lib/api/client";
+import { getDashboardPath } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 // 1. Force dynamic rendering to prevent build-time bailout errors
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -31,17 +34,18 @@ type RegisterForm = z.infer<typeof registerSchema>;
 function RegisterFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("Registration completed successfully. Redirecting you to login...");
   const [isLoading, setIsLoading] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, isLoading: isSessionLoading } = useSession();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      router.push("/dashboard");
+    if (!isSessionLoading && user) {
+      router.replace(getDashboardPath(user));
     }
-  }, [router]);
+  }, [isSessionLoading, router, user]);
 
   const initialTier = (searchParams.get("tier") as "A" | "B" | "C") || "C";
 
@@ -57,10 +61,22 @@ function RegisterFormContent() {
     setError(null);
     try {
       await api.post("/auth/register", data);
+      setSuccessMessage(
+        data.tier === "B"
+          ? "Registration submitted. Your student account now awaits admin approval. A confirmation email will be sent after approval."
+          : "Registration completed successfully. Redirecting you to login..."
+      );
       setIsSuccess(true);
-      setTimeout(() => { window.location.href = "/login"; }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Registration failed. Please try again.");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (err: unknown) {
+      const detail =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      setError(detail || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +88,7 @@ function RegisterFormContent() {
         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="text-center space-y-4">
           <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
           <h2 className="text-3xl font-bold text-slate-900">Registration Successful!</h2>
-          <p className="text-slate-500">Redirecting you to login...</p>
+          <p className="text-slate-500">{successMessage}</p>
         </motion.div>
       </div>
     );
@@ -102,11 +118,11 @@ function RegisterFormContent() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
-            {["C", "B", "A"].map((t) => (
+            {(["C", "B", "A"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
-                onClick={() => setValue("tier", t as any)}
+                onClick={() => setValue("tier", t)}
                 className={cn(
                   "rounded-xl border p-4 text-center transition-all",
                   selectedTier === t

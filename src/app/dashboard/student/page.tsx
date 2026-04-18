@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Book, Bookmark, History, FileText, CheckCircle, Clock, GraduationCap, ChevronRight, Search, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Book, Bookmark, CheckCircle, Clock, GraduationCap, ChevronRight, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api/client";
+import { useSession } from "@/components/SessionProvider";
+import { getWelcomeName } from "@/lib/session";
 
 interface RecentSearch {
   id: string;
@@ -15,6 +16,7 @@ interface RecentSearch {
 }
 
 export default function StudentDashboard() {
+  const { user } = useSession();
   const [stats, setStats] = useState({
     verificationStatus: "Loading...",
     savedItems: 0,
@@ -23,6 +25,7 @@ export default function StudentDashboard() {
   });
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
   const [loading, setLoading] = useState(true);
+  const welcomeName = getWelcomeName(user);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -46,7 +49,7 @@ export default function StudentDashboard() {
         try {
           const historyRes = await api.get(`/users/me/history?limit=5&t=${Date.now()}`);
           setRecentSearches(historyRes.data || []);
-        } catch (err) {
+        } catch {
           console.log("No search history available");
           setRecentSearches([]);
         }
@@ -56,11 +59,14 @@ export default function StudentDashboard() {
           const bookmarksRes = await api.get("/users/me/bookmarks");
           const bookmarks = bookmarksRes.data || [];
           setStats(prev => ({ ...prev, savedItems: bookmarks.length }));
-        } catch (err) {
+        } catch {
           console.log("No bookmarks available");
         }
-      } catch (err: any) {
-        console.error("Failed to fetch student data:", err);
+      } catch (err: unknown) {
+        const isAuthError = typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch student data:", err);
+        }
         // Set fallback values
         setStats({
           verificationStatus: "pending",
@@ -86,7 +92,7 @@ export default function StudentDashboard() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 font-outfit">Student Portal</h1>
-            <p className="text-slate-600">Welcome back! Ready for some research?</p>
+            <p className="text-slate-600">Welcome, {welcomeName}. Ready for some research?</p>
           </div>
         </div>
 
@@ -113,7 +119,7 @@ export default function StudentDashboard() {
         <div className="max-w-md">
           <h3 className="text-xl font-bold text-teal-900 mb-2">Academic Research Access</h3>
           <p className="text-sm text-teal-700 leading-relaxed">
-            As a verified student, you have full access to the E-Tebeka legal repository. Browse proclamations, search legal keywords, and use our AI tools to summarize complex legal text.
+            As a verified student, you have full access to the E-Tebeka legal repository. Browse proclamations, search legal keywords, and save important materials for your studies.
           </p>
         </div>
         <div className="flex gap-4">
@@ -128,7 +134,7 @@ export default function StudentDashboard() {
             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Searches</p>
             <p className="text-sm font-bold text-slate-900">
               {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 
-               `${stats.searchesToday}/${stats.maxSearches}`}
+               `${stats.searchesToday}/${stats.maxSearches === -1 ? "Unlimited" : stats.maxSearches}`}
             </p>
           </div>
           <div className="text-center bg-white rounded-2xl p-4 border border-teal-100 shadow-sm min-w-[120px]">
@@ -151,7 +157,11 @@ export default function StudentDashboard() {
           ) : recentSearches.length > 0 ? (
             <div className="space-y-4">
               {recentSearches.map((search) => (
-                <div key={search.id} className="group relative rounded-2xl border border-slate-100 bg-white p-4 hover:border-teal-200 hover:shadow-md transition-all cursor-pointer">
+                <Link
+                  key={search.id}
+                  href={`/search?q=${encodeURIComponent(search.query)}`}
+                  className="group relative block rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-teal-200 hover:shadow-md"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center">
@@ -168,7 +178,7 @@ export default function StudentDashboard() {
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-teal-600 transition-all" />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

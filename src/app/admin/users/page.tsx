@@ -19,6 +19,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingActionUserId, setPendingActionUserId] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -32,21 +33,27 @@ export default function AdminUsersPage() {
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
+    setPendingActionUserId(id);
     try {
       await api.patch(`/admin/users/${id}/status`, { status });
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
     } catch {
       alert("Failed to update user.");
+    } finally {
+      setPendingActionUserId(null);
     }
   };
 
   const promoteToAdmin = async (id: string) => {
+    setPendingActionUserId(id);
     try {
       await api.patch(`/admin/users/${id}/admin`);
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, is_admin: true } : u)));
       alert("User promoted to admin successfully!");
     } catch {
       alert("Failed to promote user to admin.");
+    } finally {
+      setPendingActionUserId(null);
     }
   };
 
@@ -72,7 +79,8 @@ export default function AdminUsersPage() {
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-red-600 text-sm">{error}</div>
         ) : (
           <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-slate-600">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] text-sm text-slate-600">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-500 text-left text-xs uppercase tracking-widest">
                   <th className="px-6 py-4">Name</th>
@@ -117,25 +125,28 @@ export default function AdminUsersPage() {
                         {user.status !== "active" && (
                           <button
                             onClick={() => updateStatus(user.id, "active")}
+                            disabled={pendingActionUserId === user.id}
                             className="flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-1 text-xs text-emerald-700 hover:bg-emerald-100 transition-colors"
                           >
-                            <CheckCircle className="h-3 w-3" /> Activate
+                            {pendingActionUserId === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />} Activate
                           </button>
                         )}
                         {user.status !== "suspended" && !user.is_admin && (
                           <button
                             onClick={() => updateStatus(user.id, "suspended")}
+                            disabled={pendingActionUserId === user.id}
                             className="flex items-center gap-1 rounded-lg bg-red-50 border border-red-100 px-3 py-1 text-xs text-red-700 hover:bg-red-100 transition-colors"
                           >
-                            <Ban className="h-3 w-3" /> Suspend
+                            {pendingActionUserId === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3" />} Suspend
                           </button>
                         )}
                         {!user.is_admin && (
                           <button
                             onClick={() => promoteToAdmin(user.id)}
+                            disabled={pendingActionUserId === user.id}
                             className="flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-100 px-3 py-1 text-xs text-teal-700 hover:bg-teal-100 transition-colors"
                           >
-                            <ShieldCheck className="h-3 w-3" /> Make Admin
+                            {pendingActionUserId === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3" />} Make Admin
                           </button>
                         )}
                       </div>
@@ -144,6 +155,7 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
+            </div>
             {users.length === 0 && (
               <div className="py-16 text-center text-slate-400 text-sm">No users found.</div>
             )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Upload,
@@ -9,17 +8,16 @@ import {
   ShieldCheck,
   FileText,
   ArrowRight,
-  BarChart3,
-  CheckCircle2,
   Clock,
-  AlertTriangle,
 } from "lucide-react";
 import api from "@/lib/api/client";
+import { useSession } from "@/components/SessionProvider";
+import { getWelcomeName } from "@/lib/session";
 
 const adminSections = [
   {
     title: "Document Upload",
-    description: "Upload new legal PDF gazettes and process them with Gemini AI.",
+    description: "Upload new legal PDF gazettes and publish them with manual metadata review.",
     href: "/admin/documents/upload",
     icon: Upload,
     color: "teal",
@@ -56,23 +54,36 @@ const adminSections = [
 ];
 
 export default function AdminDashboard() {
-  const router = useRouter();
+  const { user } = useSession();
   const [stats, setStats] = useState({
     totalDocuments: "—",
     totalUsers: "—",
     pendingVerifications: "—",
   });
+  const [statsMessage, setStatsMessage] = useState<string | null>(null);
+  const welcomeName = getWelcomeName(user) || "Administrator";
 
   useEffect(() => {
+    if (!user?.is_admin) {
+      setStatsMessage("Open admin view loaded. Sign in with an admin account to load protected admin statistics and actions.");
+      return;
+    }
+
     // Fetch quick stats from backend
     api
       .get("/admin/stats")
-      .then((r) => setStats(r.data))
+      .then((r) => {
+        setStats(r.data);
+        setStatsMessage(null);
+      })
       .catch((err) => {
-        console.error("Failed to fetch admin stats:", err);
-        // Keep default "—" values if stats fail to load
+        const isAuthError = err?.response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch admin stats:", err?.message || "Unknown error");
+        }
+        setStatsMessage("Admin page opened, but protected statistics could not be loaded right now.");
       });
-  }, []);
+  }, [user?.is_admin]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-16">
@@ -83,11 +94,16 @@ export default function AdminDashboard() {
             <ShieldCheck className="h-3 w-3" /> Admin Panel
           </div>
           <h1 className="text-5xl font-bold text-slate-900 font-outfit mb-3">
-            Welcome, Administrator
+            Welcome, {welcomeName}
           </h1>
           <p className="text-slate-600 text-lg">
             Manage the E-Tebeka Ethiopian Legal Repository platform.
           </p>
+          {statsMessage && (
+            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {statsMessage}
+            </div>
+          )}
         </div>
 
         {/* Stats Row */}
@@ -111,7 +127,7 @@ export default function AdminDashboard() {
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {adminSections.map(
-            ({ title, description, href, icon: Icon, gradient, border, iconBg, iconColor, badge }) => (
+            ({ title, description, href, icon: Icon, border, iconBg, iconColor, badge }) => (
               <Link
                 key={href}
                 href={href}

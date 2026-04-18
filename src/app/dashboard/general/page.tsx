@@ -1,21 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Book, History, Search, Scale, ChevronRight, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Book, Search, Scale, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import api from "@/lib/api/client";
+import { useSession } from "@/components/SessionProvider";
+import { getWelcomeName } from "@/lib/session";
+
+interface HistoryItem {
+  id: string;
+  query: string;
+}
 
 export default function GeneralDashboard() {
+  const { user } = useSession();
   const [stats, setStats] = useState({
     searchesToday: 0,
     maxSearches: 5,
     viewsToday: 0,
     maxViews: 10
   });
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const welcomeName = getWelcomeName(user);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -32,10 +38,12 @@ export default function GeneralDashboard() {
           maxViews: statsRes.data.views_limit
         });
         setHistory(historyRes.data);
-      } catch (err) {
-        console.error("Failed to fetch user data", err);
+      } catch (err: unknown) {
+        const isAuthError = typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch user data", err);
+        }
       } finally {
-        setLoading(false);
       }
     };
     
@@ -64,7 +72,7 @@ export default function GeneralDashboard() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 font-outfit">Citizen Portal</h1>
-            <p className="text-slate-600">Welcome to your digital legal access center.</p>
+            <p className="text-slate-600">Welcome, {welcomeName}. Your digital legal access center is ready.</p>
           </div>
         </div>
 
@@ -80,7 +88,7 @@ export default function GeneralDashboard() {
         <div className="max-w-md">
           <h3 className="text-xl font-bold text-emerald-900 mb-2">Public Legal Research</h3>
           <p className="text-sm text-emerald-700 leading-relaxed">
-            As a registered citizen, you have basic access to the E-Tebeka legal repository. Browse recent proclamations, search for specific laws, and stay informed on Ethiopia's legal frameworks.
+            As a registered citizen, you have basic access to the E-Tebeka legal repository. Browse recent proclamations, search for specific laws, and stay informed on Ethiopia&apos;s legal frameworks.
           </p>
         </div>
         <div className="flex gap-4">
@@ -101,7 +109,11 @@ export default function GeneralDashboard() {
           <h2 className="text-xl font-bold text-slate-900">Recent Searches</h2>
           <div className="space-y-4">
             {history.length > 0 ? history.map((item) => (
-              <div key={item.id} className="group relative rounded-2xl border border-slate-100 bg-white p-4 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer">
+              <Link
+                key={item.id}
+                href={`/search?q=${encodeURIComponent(item.query)}`}
+                className="group relative block rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-emerald-200 hover:shadow-md"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
@@ -114,7 +126,7 @@ export default function GeneralDashboard() {
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 transition-all" />
                 </div>
-              </div>
+              </Link>
             )) : (
               <div className="text-center py-8 text-slate-500 text-sm">No recent searches</div>
             )}

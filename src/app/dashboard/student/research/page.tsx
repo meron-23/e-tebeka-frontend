@@ -18,6 +18,7 @@ interface Document {
 export default function StudentResearchPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -45,19 +46,23 @@ export default function StudentResearchPage() {
   });
 
   const toggleDocumentSelection = (docId: string) => {
-    setSelectedDocs(prev => 
-      prev.includes(docId) 
-        ? prev.filter(id => id !== docId)
-        : [...prev, docId].slice(0, 2) // Limit to 2 documents for comparison
+    setSelectedDocs((prev) =>
+      prev.includes(docId)
+        ? prev.filter((id) => id !== docId)
+        : [...prev, docId].slice(0, 2)
     );
+    setShowComparison(false);
   };
 
   const handleCompare = () => {
     if (selectedDocs.length === 2) {
-      // Navigate to comparison view or open modal
-      alert(`Comparison feature coming soon for documents: ${selectedDocs.join(', ')}`);
+      setShowComparison(true);
     }
   };
+
+  const comparisonDocuments = selectedDocs
+    .map((docId) => documents.find((doc) => doc.id === docId))
+    .filter(Boolean) as Document[];
 
   if (loading) {
     return (
@@ -178,6 +183,65 @@ export default function StudentResearchPage() {
           <div className="text-center py-16">
             <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500">No documents found matching your criteria.</p>
+          </div>
+        )}
+
+        {showComparison && comparisonDocuments.length === 2 && (
+          <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Comparison Summary</h2>
+                <p className="text-sm text-slate-500">Review the key metadata for the two selected legal documents.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowComparison(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Close Comparison
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {comparisonDocuments.map((doc) => (
+                <div key={doc.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-lg font-bold text-slate-900">{doc.title_en}</h3>
+                  <p className="mt-1 text-sm text-slate-600 font-amharic">{doc.title_am || "No Amharic title available"}</p>
+                  <div className="mt-4 space-y-2 text-sm text-slate-600">
+                    <div className="flex justify-between gap-4">
+                      <span>Document Number</span>
+                      <span className="font-semibold text-slate-900">#{doc.document_number}</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span>Type</span>
+                      <span className="font-semibold capitalize text-slate-900">{doc.document_type}</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span>Year</span>
+                      <span className="font-semibold text-slate-900">{doc.year_gregorian}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(doc.categories || []).length > 0 ? (
+                      doc.categories?.map((category) => (
+                        <span key={`${doc.id}-${category}`} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                          {category}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">No categories attached</span>
+                    )}
+                  </div>
+                  <Link
+                    href={`/documents/${doc.id}`}
+                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Open Document
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -1,19 +1,113 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Filter, BookOpen, Clock, Tag, ChevronRight, Loader2, FileText, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useSession } from "@/components/SessionProvider";
 import api from "@/lib/api/client";
 
+const PUBLIC_DAILY_SEARCH_LIMIT = 5;
+export const dynamic = "force-dynamic";
+
+interface SearchCategory {
+  id: string | number;
+  name_en: string;
+}
+
+interface SearchResultItem {
+  id: string;
+  document_type: string;
+  document_number: string;
+  title_en: string;
+  title_am?: string;
+  year_gregorian?: number;
+  is_new?: boolean;
+}
+
+function getResponseStatus(error: unknown) {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    return (error as { response?: { status?: number } }).response?.status;
+  }
+
+  return undefined;
+}
+
+function getAnonymousSearchKey() {
+  const today = new Date().toISOString().slice(0, 10);
+  return `etebeka-anonymous-searches:${today}`;
+}
+
+function readAnonymousSearchCount() {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  return Number(localStorage.getItem(getAnonymousSearchKey()) || "0");
+}
+
+function writeAnonymousSearchCount(value: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.setItem(getAnonymousSearchKey(), String(value));
+}
+
 export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const { user } = useSession();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [stats, setStats] = useState({ searchesLeft: 5 });
-  const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState({ searchesLeft: PUBLIC_DAILY_SEARCH_LIMIT, isUnlimited: false });
+  const [categories, setCategories] = useState<SearchCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitMessage, setLimitMessage] = useState("You have reached your public search limit for today.");
+  const lastAutoSearchRef = useRef("");
+
+  const queryFromUrl = searchParams.get("q") ?? "";
+  const isUnlimitedUser = Boolean(user?.is_admin || user?.tier === "A" || user?.tier === "B");
+
+  const refreshStats = useCallback(async () => {
+    if (isUnlimitedUser) {
+      setStats({ searchesLeft: -1, isUnlimited: true });
+      return;
+    }
+
+    try {
+      const statsRes = await api.get(`/users/me/stats?t=${Date.now()}`);
+      const searchLimit = Number(statsRes.data.search_limit);
+      const searchesToday = Number(statsRes.data.searches_today || 0);
+      const unlimited = searchLimit === -1;
+
+      setStats({
+        searchesLeft: unlimited ? -1 : Math.max(0, searchLimit - searchesToday),
+        isUnlimited: unlimited,
+      });
+    } catch (err: unknown) {
+      const status = getResponseStatus(err);
+      if (status === 401 || status === 403) {
+        const anonymousCount = readAnonymousSearchCount();
+        setStats({
+          searchesLeft: Math.max(0, PUBLIC_DAILY_SEARCH_LIMIT - anonymousCount),
+          isUnlimited: false,
+        });
+      } else if (!user) {
+        // Don't log error when user is not authenticated - this is expected
+        const anonymousCount = readAnonymousSearchCount();
+        setStats({
+          searchesLeft: Math.max(0, PUBLIC_DAILY_SEARCH_LIMIT - anonymousCount),
+          isUnlimited: false,
+        });
+      } else {
+        console.error("Could not fetch user stats");
+      }
+    }
+  }, [isUnlimitedUser]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -24,97 +118,91 @@ export default function SearchPage() {
         console.error("Failed to fetch categories:", err);
       }
 
-      // Fetch user stats to get accurate remaining searches before first search
-      try {
-        const statsRes = await api.get(`/users/me/stats?t=${Date.now()}`);
-        const remaining = Math.max(0, statsRes.data.search_limit - statsRes.data.searches_today);
-        setStats({ searchesLeft: remaining });
-      } catch (err: any) {
-        // If 401 (unauthenticated), user is anonymous - set default limit
-        if (err.response?.status === 401) {
-          setStats({ searchesLeft: 5 }); // Default for anonymous users
-        } else {
-          console.error("Could not fetch user stats, using default bounds");
-        }
-      }
+      await refreshStats();
     };
-    fetchInitialData();
-    
-    // Refresh stats when page gets focus
-    const handleFocus = () => {
-      api.get(`/users/me/stats?t=${Date.now()}`)
-        .then(statsRes => {
-          const remaining = Math.max(0, statsRes.data.search_limit - statsRes.data.searches_today);
-          setStats({ searchesLeft: remaining });
-        })
-        .catch(err => {
-          if (err.response?.status === 401) {
-            console.log("User is anonymous, using backend search count");
-          } else {
-            console.error("Could not refresh user stats on focus");
-          }
-        });
-    };
-    window.addEventListener('focus', handleFocus);
-    
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
 
-  // Debounced search for live results
+    fetchInitialData();
+
+    const handleFocus = () => {
+      void refreshStats();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refreshStats]);
+
+  const handleSearch = useCallback(
+    async (e?: React.FormEvent, explicitQuery?: string) => {
+      e?.preventDefault();
+      const term = (explicitQuery ?? query).trim();
+      if (!term) {
+        return;
+      }
+
+      if (!stats.isUnlimited && stats.searchesLeft <= 0) {
+        setLimitMessage("You have reached your 5 public searches for today. Please sign in, upgrade, or try again tomorrow.");
+        setShowLimitModal(true);
+        setHasSearched(true);
+        return;
+      }
+
+      setIsLoading(true);
+      setHasSearched(true);
+
+      try {
+        let url = `/documents/search?q=${encodeURIComponent(term)}`;
+        if (selectedCategory) {
+          url += `&category_id=${encodeURIComponent(selectedCategory)}`;
+        }
+
+        const response = await api.get(url);
+        setResults(response.data.results);
+
+        if (response.data.searches_left !== undefined) {
+          const remaining = Number(response.data.searches_left);
+          setStats({
+            searchesLeft: remaining,
+            isUnlimited: remaining === -1 || isUnlimitedUser,
+          });
+        }
+
+        await refreshStats();
+      } catch (err: unknown) {
+        // Suppress raw error logging to avoid Turbopack overlay
+        if (getResponseStatus(err) === 429) {
+          setStats({ searchesLeft: 0, isUnlimited: false });
+          setLimitMessage("Your search limit is reached. Public access is limited to 5 searches per day.");
+          setShowLimitModal(true);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isUnlimitedUser, query, refreshStats, selectedCategory, stats.isUnlimited, stats.searchesLeft, user]
+  );
+
   useEffect(() => {
-    if (query.trim().length === 0) {
-      setResults([]);
-      setHasSearched(false);
+    const normalizedQuery = queryFromUrl.trim();
+
+    if (!normalizedQuery) {
+      if (lastAutoSearchRef.current !== "") {
+        lastAutoSearchRef.current = "";
+        setQuery("");
+        setResults([]);
+        setHasSearched(false);
+      }
       return;
     }
 
-    const timer = setTimeout(() => {
-      handleSearch();
-    }, 600); // 600ms debounce
-
-    return () => clearTimeout(timer);
-  }, [query, selectedCategory]);
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!query.trim()) return;
-
-    setIsLoading(true);
-    setHasSearched(true);
-    try {
-      let url = `/documents/search?q=${query}`;
-      if (selectedCategory) {
-        url += `&category_id=${selectedCategory}`;
-      }
-      const response = await api.get(url);
-      setResults(response.data.results);
-      if (response.data.searches_left !== undefined) {
-        const sl = response.data.searches_left;
-        setStats({ searchesLeft: sl });
-      }
-      
-      // Refetch user stats to ensure we have the latest data
-      try {
-        const statsRes = await api.get(`/users/me/stats?t=${Date.now()}`);
-        const remaining = Math.max(0, statsRes.data.search_limit - statsRes.data.searches_today);
-        setStats({ searchesLeft: remaining });
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          console.log("Anonymous user, using backend search count");
-        } else {
-          console.error("Could not refresh user stats after search");
-        }
-      }
-    } catch (err: any) {
-      console.error(err);
-      if (err.response?.status === 429) {
-        setStats({ searchesLeft: 0 });
-        alert("Daily search limit reached. Please register or log in for unlimited legal research.");
-      }
-    } finally {
-      setIsLoading(false);
+    if (lastAutoSearchRef.current === normalizedQuery) {
+      return;
     }
-  };
+
+    lastAutoSearchRef.current = normalizedQuery;
+    setQuery(normalizedQuery);
+    void handleSearch(undefined, normalizedQuery);
+  }, [handleSearch, queryFromUrl]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -143,7 +231,7 @@ export default function SearchPage() {
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center px-4 py-2 bg-teal-100 rounded-full text-teal-700 text-sm font-medium">
               <Clock className="h-4 w-4 mr-2" />
-              {stats.searchesLeft === -1 ? "Unlimited searches" : `${stats.searchesLeft} searches remaining today`}
+              {stats.isUnlimited ? "Unlimited searches" : `${stats.searchesLeft} searches remaining today`}
             </div>
           </div>
 
@@ -175,7 +263,7 @@ export default function SearchPage() {
                     className="h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-gray-700 appearance-none cursor-pointer"
                   >
                     <option value="">All Categories</option>
-                    {categories.map((cat: any) => (
+                    {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name_en}
                       </option>
@@ -234,7 +322,7 @@ export default function SearchPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {results.map((doc: any, idx) => (
+                {results.map((doc, idx) => (
                   <motion.div
                     key={doc.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -320,7 +408,7 @@ export default function SearchPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Start Your Search</h3>
                 <p className="text-gray-600 mb-8">
-                  Enter keywords to search through Ethiopia's comprehensive legal database
+                  Enter keywords to search through Ethiopia&apos;s comprehensive legal database
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
@@ -343,6 +431,41 @@ export default function SearchPage() {
           )}
         </div>
       </section>
+
+      {showLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="mb-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+              Search Limit Reached
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Public access is limited to five searches.</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{limitMessage}</p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Link
+                href={user ? "/register?tier=A" : "/login"}
+                className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-teal-700"
+                onClick={() => setShowLimitModal(false)}
+              >
+                {user ? "Upgrade Access" : "Sign In for More Access"}
+              </Link>
+              <Link
+                href="/register?tier=B"
+                className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={() => setShowLimitModal(false)}
+              >
+                Apply as Student
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowLimitModal(false)}
+                className="rounded-xl px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

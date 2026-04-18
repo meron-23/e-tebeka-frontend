@@ -1,11 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, Tag, Clock, ChevronRight, Loader2, Filter, Gavel, FileText } from "lucide-react";
+import { BookOpen, Clock, ChevronRight, Loader2, Filter, Gavel, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import api from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+
+interface DocumentListItem {
+  id: string;
+  document_type: string;
+  document_number: string;
+  status?: string;
+  title_en: string;
+  title_am?: string;
+  year_gregorian?: number;
+}
 
 const DOC_TYPES = [
   { value: "", label: "All Types", icon: <FileText className="h-4 w-4" /> },
@@ -14,7 +24,7 @@ const DOC_TYPES = [
 ];
 
 export default function BrowsePage() {
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [docType, setDocType] = useState("");
   const [page, setPage] = useState(0);
@@ -92,7 +102,7 @@ export default function BrowsePage() {
       ) : (
         <AnimatePresence>
           <div className="space-y-4">
-            {documents.map((doc: any, idx: number) => (
+            {documents.map((doc, idx) => (
               <motion.div
                 key={doc.id}
                 initial={{ opacity: 0, y: 10 }}

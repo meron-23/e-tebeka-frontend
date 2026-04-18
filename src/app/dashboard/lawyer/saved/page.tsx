@@ -23,9 +23,9 @@ export default function LawyerSavedPage() {
       try {
         const response = await api.get("/users/me/bookmarks");
         setBookmarks(response.data || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch bookmarks:", err);
-        if (err.response?.status === 401) {
+        if (typeof err === "object" && err !== null && "response" in err && (err as { response?: { status?: number } }).response?.status === 401) {
           // User not logged in
         }
       } finally {
@@ -109,7 +109,7 @@ export default function LawyerSavedPage() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-4">No Bookmarked Documents</h2>
             <p className="text-slate-600 mb-8 max-w-md mx-auto">
-              You haven't saved any documents yet. Browse the library and bookmark important documents for quick access.
+              You haven&apos;t saved any documents yet. Browse the library and bookmark important documents for quick access.
             </p>
             <Link
               href="/dashboard/lawyer/library"

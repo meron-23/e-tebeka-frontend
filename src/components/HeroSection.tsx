@@ -1,20 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, FileText, Scale, BookOpen, ArrowRight, CheckCircle, Users, Shield } from "lucide-react";
-import Link from "next/link";
+import { Scale, CheckCircle, Users, Shield } from "lucide-react";
 
 export default function HeroSection() {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
-    }
-  };
-
   return (
     <section 
       className="relative bg-gradient-to-br from-teal-50 via-white to-blue-50 py-20 lg:py-32 overflow-hidden"

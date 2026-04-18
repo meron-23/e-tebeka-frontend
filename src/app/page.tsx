@@ -1,10 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import HeroSection from "@/components/HeroSection";
 import ServiceCategories from "@/components/ServiceCategories";
 import { motion } from "framer-motion";
-import { CheckCircle2, Users, ShieldCheck, Star, ArrowRight } from "lucide-react";
+import { useSession } from "@/components/SessionProvider";
+import { getDashboardPath } from "@/lib/session";
+import { CheckCircle2, Users, ShieldCheck, Star } from "lucide-react";
 
 const features = [
   {
@@ -83,6 +87,15 @@ const tiers = [
 ];
 
 export default function LandingPage() {
+  const { user, isLoading } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace(getDashboardPath(user));
+    }
+  }, [isLoading, router, user]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -232,7 +245,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">E-Tebeka</span>
               </div>
               <p className="text-gray-400">
-                Ethiopia's premier digital law library, providing comprehensive access to legal documents and resources.
+                Ethiopia&apos;s premier digital law library, providing comprehensive access to legal documents and resources.
               </p>
             </div>
             
@@ -249,10 +262,10 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="#" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">API Documentation</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Legal Disclaimer</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/search" className="hover:text-white transition-colors">Search Guide</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">Legal Disclaimer</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
             

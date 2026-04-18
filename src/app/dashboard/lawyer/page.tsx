@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Gavel, Bookmark, Download, Shield, FileSearch, Filter, Plus, ChevronRight, Briefcase, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Gavel, Bookmark, Download, Shield, FileSearch, Plus, Briefcase, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import api from "@/lib/api/client";
+import { useSession } from "@/components/SessionProvider";
+import { getWelcomeName } from "@/lib/session";
 
 interface RecentActivity {
   id: string;
@@ -16,6 +16,7 @@ interface RecentActivity {
 }
 
 export default function LawyerDashboard() {
+  const { user } = useSession();
   const [stats, setStats] = useState({
     subscriptionStatus: "Loading...",
     downloadsToday: 0,
@@ -24,6 +25,7 @@ export default function LawyerDashboard() {
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const welcomeName = getWelcomeName(user);
 
   useEffect(() => {
     const fetchLawyerData = async () => {
@@ -43,12 +45,15 @@ export default function LawyerDashboard() {
         try {
           const activityRes = await api.get(`/users/me/downloads?limit=5&t=${Date.now()}`);
           setRecentActivity(activityRes.data || []);
-        } catch (err) {
+        } catch {
           console.log("No download history available");
           setRecentActivity([]);
         }
-      } catch (err) {
-        console.error("Failed to fetch lawyer data:", err);
+      } catch (err: unknown) {
+        const isAuthError = typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch lawyer data:", err);
+        }
         setStats({
           subscriptionStatus: "Professional Suite", // Fallback for tier A users
           downloadsToday: 0,
@@ -72,8 +77,8 @@ export default function LawyerDashboard() {
             <Gavel className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 font-outfit">Lawyer's Suite</h1>
-            <p className="text-slate-600">Professional practice dashboard.</p>
+            <h1 className="text-3xl font-bold text-slate-900 font-outfit">Lawyer&apos;s Suite</h1>
+            <p className="text-slate-600">Welcome, {welcomeName}. Your professional practice dashboard is ready.</p>
           </div>
         </div>
 
@@ -82,9 +87,9 @@ export default function LawyerDashboard() {
             <Shield className="h-4 w-4" />
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : stats.subscriptionStatus}
           </div>
-          <button className="rounded-2xl bg-teal-600 px-6 py-2 text-sm font-bold text-white border border-teal-600 hover:bg-teal-700 transition-all flex items-center gap-2 shadow-md shadow-teal-600/20">
+          <Link href="/dashboard/lawyer/saved" className="rounded-2xl bg-teal-600 px-6 py-2 text-sm font-bold text-white border border-teal-600 hover:bg-teal-700 transition-all flex items-center gap-2 shadow-md shadow-teal-600/20">
             <Plus className="h-4 w-4" /> New Case File
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -160,9 +165,12 @@ export default function LawyerDashboard() {
                         </p>
                       </div>
                     </div>
-                    <button className="text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors">
-                      Re-download
-                    </button>
+                    <Link
+                      href="/dashboard/lawyer/library"
+                      className="text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors"
+                    >
+                      Open Library
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -184,9 +192,12 @@ export default function LawyerDashboard() {
             <p className="text-teal-100 text-sm mb-6 leading-relaxed">
               Add confidential practice notes to any legal section. These are encrypted and accessible only by you.
             </p>
-            <button className="w-full rounded-xl bg-white/20 backdrop-blur-lg px-4 py-2 text-sm font-bold hover:bg-white/30 transition-all">
-              Access Global Notes
-            </button>
+            <Link
+              href="/dashboard/lawyer/saved"
+              className="block w-full rounded-xl bg-white/20 px-4 py-2 text-center text-sm font-bold backdrop-blur-lg hover:bg-white/30 transition-all"
+            >
+              Open Case Bookmarks
+            </Link>
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -208,12 +219,15 @@ export default function LawyerDashboard() {
                 <span className="text-slate-500">Download Limit</span>
                 <span className="text-slate-900 font-medium">
                   {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 
-                   stats.totalDownloads === 999999 ? "Unlimited" : stats.totalDownloads}
+                   stats.totalDownloads === -1 || stats.totalDownloads === 999999 ? "Unlimited" : stats.totalDownloads}
                 </span>
               </div>
-              <button className="w-full mt-2 rounded-xl border border-slate-200 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">
-                Manage Billing
-              </button>
+              <a
+                href="mailto:support@e-tebeka.gov.et?subject=E-Tebeka%20Lawyer%20Subscription"
+                className="block w-full mt-2 rounded-xl border border-slate-200 py-2 text-center text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Contact Billing Support
+              </a>
             </div>
           </div>
         </div>

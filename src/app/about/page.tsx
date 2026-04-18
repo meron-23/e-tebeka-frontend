@@ -2,9 +2,22 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, ShieldCheck, Users, BookOpen, Scale } from "lucide-react";
+import { useSession } from "@/components/SessionProvider";
+import { getDashboardPath } from "@/lib/session";
 
 export default function AboutPage() {
+  const { user, isLoading } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace(getDashboardPath(user));
+    }
+  }, [isLoading, router, user]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -24,7 +37,7 @@ export default function AboutPage() {
               transition={{ delay: 0.1 }}
               className="text-xl text-gray-600 max-w-3xl mx-auto"
             >
-              Ethiopia's premier digital law library, providing comprehensive access to legal documents and resources for citizens, students, and legal professionals.
+              Ethiopia&apos;s premier digital law library, providing comprehensive access to legal documents and resources for citizens, students, and legal professionals.
             </motion.p>
           </div>
         </div>

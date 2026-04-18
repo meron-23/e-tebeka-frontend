@@ -8,7 +8,9 @@ import { motion } from "framer-motion";
 import { LogIn, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/components/SessionProvider";
 import api from "@/lib/api/client";
+import { getDashboardPath, isApprovedStudent } from "@/lib/session";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -21,23 +23,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user, isLoading: isSessionLoading, setAuthenticatedSession } = useSession();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        if (user.is_admin) router.push("/admin");
-        else if (user.tier === "A") router.push("/dashboard/lawyer");
-        else if (user.tier === "B") router.push("/dashboard/student");
-        else router.push("/dashboard/general");
-      } catch (e) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
+    if (!isSessionLoading && user) {
+      router.replace(getDashboardPath(user));
     }
-  }, [router]);
+  }, [isSessionLoading, router, user]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -49,23 +41,29 @@ export default function LoginPage() {
     try {
       const response = await api.post("/auth/login", data);
       const { access_token, user } = response.data;
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("user", JSON.stringify(user));
-      
-      // Redirect based on tier using window.location for full reload
-      if (user.is_admin) window.location.href = "/admin";
-      else if (user.tier === "A") window.location.href = "/dashboard/lawyer";
-      else if (user.tier === "B") window.location.href = "/dashboard/student";
-      else window.location.href = "/dashboard/general";
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Invalid email or password");
+
+      if (user.tier === "B" && !isApprovedStudent(user)) {
+        setError("Your student account is waiting for admin approval. Please check your email after approval and sign in again.");
+        return;
+      }
+
+      setAuthenticatedSession(access_token, user);
+      router.replace(getDashboardPath(user));
+      router.refresh();
+    } catch (err: unknown) {
+      const detail =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      setError(detail || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-[calc(100-64px)] items-center justify-center px-4 py-20 pb-0">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-20">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -118,7 +116,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-slate-600">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/register" className="font-semibold text-teal-600 hover:text-teal-500 underline underline-offset-4 decoration-teal-600/30 hover:decoration-teal-600">
             Create account
           </Link>

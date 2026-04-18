@@ -2,15 +2,53 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { FileText, Download, Bookmark, Share2, ArrowLeft, ChevronRight, Loader2, Check } from "lucide-react";
-import { motion } from "framer-motion";
+import { Download, Bookmark, Share2, ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
+interface BookmarkRow {
+  document_id: string;
+}
+
+interface DocumentSection {
+  id: string;
+  section_number: string;
+  section_number_am?: string;
+  title_en: string;
+  title_am?: string;
+  content_en?: string;
+  content_am?: string;
+}
+
+interface DocumentRecord {
+  document_type: string;
+  document_number: string;
+  title_en: string;
+  title_am?: string;
+  pdf_url?: string;
+  year_gregorian?: string | number;
+  year_ec?: string | number;
+  issuing_body_en?: string;
+  status?: string;
+}
+
+interface DocumentResponse {
+  document: DocumentRecord;
+  sections: DocumentSection[];
+}
+
+function getResponseStatus(error: unknown) {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    return (error as { response?: { status?: number } }).response?.status;
+  }
+
+  return undefined;
+}
+
 export default function DocumentDetailPage() {
   const { id } = useParams();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DocumentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -24,10 +62,10 @@ export default function DocumentDetailPage() {
         // Check if document is bookmarked
         try {
           const bookmarksResponse = await api.get("/users/me/bookmarks");
-          const bookmarks = bookmarksResponse.data;
-          const isDocBookmarked = bookmarks.some((bookmark: any) => bookmark.document_id === id);
+          const bookmarks = (bookmarksResponse.data || []) as BookmarkRow[];
+          const isDocBookmarked = bookmarks.some((bookmark) => bookmark.document_id === id);
           setIsBookmarked(isDocBookmarked);
-        } catch (err) {
+        } catch {
           // User might not be logged in, ignore bookmark check
           console.log("Could not check bookmarks (user not logged in)");
         }
@@ -69,9 +107,9 @@ export default function DocumentDetailPage() {
         setIsBookmarked(true);
         alert("Document added to bookmarks");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Bookmark operation failed:", err);
-      if (err.response?.status === 401) {
+      if (getResponseStatus(err) === 401) {
         alert("Please log in to bookmark documents");
       } else {
         alert("Failed to update bookmark");
@@ -171,7 +209,7 @@ export default function DocumentDetailPage() {
 
           {/* Articles/Sections */}
           <div className="space-y-12 pb-24">
-            {sections.map((section: any) => (
+            {sections.map((section) => (
               <div key={section.id} className="group scroll-mt-24" id={`sec-${section.section_number}`}>
                 <div className="flex items-baseline gap-4 mb-4">
                   <span className="text-2xl font-black text-teal-500/40 font-mono">
@@ -227,7 +265,7 @@ export default function DocumentDetailPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h4 className="font-bold text-slate-900 mb-4">Navigation</h4>
             <div className="space-y-2">
-              {sections.map((s: any) => (
+              {sections.map((s) => (
                 <a
                   key={s.id}
                   href={`#sec-${s.section_number}`}
