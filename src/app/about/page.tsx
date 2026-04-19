@@ -2,22 +2,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, ShieldCheck, Users, BookOpen, Scale } from "lucide-react";
-import { useSession } from "@/components/SessionProvider";
-import { getDashboardPath } from "@/lib/session";
 
 export default function AboutPage() {
-  const { user, isLoading } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace(getDashboardPath(user));
-    }
-  }, [isLoading, router, user]);
-
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}

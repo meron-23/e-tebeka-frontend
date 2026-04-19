@@ -24,7 +24,10 @@ export default function StudentSavedPage() {
         const response = await api.get("/users/me/bookmarks");
         setBookmarks(response.data || []);
       } catch (err: unknown) {
-        console.error("Failed to fetch bookmarks:", err);
+        const isAuthError = typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch bookmarks:", err);
+        }
         if (typeof err === "object" && err !== null && "response" in err && (err as { response?: { status?: number } }).response?.status === 401) {
           // User not logged in
         }
