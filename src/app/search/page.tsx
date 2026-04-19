@@ -260,7 +260,7 @@ export default function SearchPage() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-gray-700 appearance-none cursor-pointer"
+                    className="w-full py-4 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-gray-700 appearance-none cursor-pointer h-full"
                   >
                     <option value="">All Categories</option>
                     {categories.map((cat) => (

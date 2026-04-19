@@ -26,7 +26,10 @@ export default function AdminUsersPage() {
       .get("/admin/users")
       .then((r) => setUsers(r.data))
       .catch((err) => {
-        console.error("Failed to load users:", err);
+        const isAuthError = err?.response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to load users:", err);
+        }
         setError("Failed to load users. Ensure you have admin privileges and the backend is running.");
       })
       .finally(() => setLoading(false));

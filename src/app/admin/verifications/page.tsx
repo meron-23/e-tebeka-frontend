@@ -31,7 +31,10 @@ export default function AdminVerificationsPage() {
         setItems(verificationResponse.data || []);
       })
       .catch((err) => {
-        console.error("Failed to load verifications:", err);
+        const isAuthError = err?.response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to load verifications:", err);
+        }
         setError("Failed to load verifications. Ensure you have admin privileges and the backend is running.");
       })
       .finally(() => setLoading(false));

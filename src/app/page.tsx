@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import HeroSection from "@/components/HeroSection";
 import ServiceCategories from "@/components/ServiceCategories";
 import { motion } from "framer-motion";
-import { useSession } from "@/components/SessionProvider";
-import { getDashboardPath } from "@/lib/session";
 import { CheckCircle2, Users, ShieldCheck, Star } from "lucide-react";
 
 const features = [
@@ -87,15 +83,6 @@ const tiers = [
 ];
 
 export default function LandingPage() {
-  const { user, isLoading } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace(getDashboardPath(user));
-    }
-  }, [isLoading, router, user]);
-
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
