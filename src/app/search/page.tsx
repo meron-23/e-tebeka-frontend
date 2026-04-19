@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Search, Filter, BookOpen, Clock, Tag, ChevronRight, Loader2, FileText, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -55,7 +55,7 @@ function writeAnonymousSearchCount(value: number) {
   localStorage.setItem(getAnonymousSearchKey(), String(value));
 }
 
-export default function SearchPage() {
+function SearchPageInner() {
   const searchParams = useSearchParams();
   const { user } = useSession();
   const [query, setQuery] = useState("");
@@ -467,5 +467,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" /></div>}>
+      <SearchPageInner />
+    </Suspense>
   );
 }
