@@ -1,9 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import HeroSection from "@/components/HeroSection";
+import ServiceCategories from "@/components/ServiceCategories";
 import { motion } from "framer-motion";
-import { Search, Gavel, GraduationCap, ShieldCheck, ArrowRight, CheckCircle2, Scale } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useSession } from "@/components/SessionProvider";
+import { getDashboardPath } from "@/lib/session";
+import { CheckCircle2, Users, ShieldCheck, Star } from "lucide-react";
+
+const features = [
+  {
+    title: "Comprehensive Database",
+    description: "Access to all Ethiopian federal laws, proclamations, and regulations in one centralized platform.",
+    icon: <ShieldCheck className="h-6 w-6" />
+  },
+  {
+    title: "Advanced Search",
+    description: "Powerful search functionality with filters, keywords, and smart recommendations to find exactly what you need.",
+    icon: <Star className="h-6 w-6" />
+  },
+  {
+    title: "User-Friendly Interface",
+    description: "Modern, intuitive design optimized for both desktop and mobile devices for seamless access.",
+    icon: <Users className="h-6 w-6" />
+  }
+];
 
 const tiers = [
   {
@@ -28,7 +51,7 @@ const tiers = [
     tier: "B",
     price: "Free",
     status: "Requires Verification",
-    icon: <GraduationCap className="h-8 w-8 text-blue-400" />,
+    icon: <Users className="h-8 w-8 text-blue-400" />,
     description: "Tailored research tools for law students and researchers.",
     features: [
       "Advanced research mode",
@@ -40,14 +63,14 @@ const tiers = [
     cta: "Apply for Access",
     href: "/register?tier=B",
     featured: true,
-    color: "from-blue-500/20 to-indigo-500/20",
-    borderColor: "group-hover:border-blue-500/50"
+    color: "from-teal-500/20 to-emerald-500/20",
+    borderColor: "group-hover:border-teal-500/50"
   },
   {
     name: "Lawyers",
     tier: "A",
     price: "Subscription",
-    icon: <Gavel className="h-8 w-8 text-amber-400" />,
+    icon: <Star className="h-8 w-8 text-amber-400" />,
     description: "Complete legal suite for professional practice.",
     features: [
       "Unlimited searches & views",
@@ -64,139 +87,201 @@ const tiers = [
 ];
 
 export default function LandingPage() {
+  const { user, isLoading } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace(getDashboardPath(user));
+    }
+  }, [isLoading, router, user]);
+
   return (
-    <div className="relative isolate overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-indigo-200 to-indigo-400 opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
-      </div>
-
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-6 pb-24 pt-16 sm:pb-32 lg:flex lg:px-8 lg:pt-32">
-        <div className="mx-auto max-w-2xl flex-shrink-0 lg:mx-0 lg:max-w-xl lg:pt-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-24 sm:mt-32 lg:mt-16"
-          >
-            <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
-              Ethiopia's Digital Law Library
-            </span>
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-10 text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl font-outfit line-height-tight"
-          >
-            Empowering Justice via <span className="bg-gradient-to-r from-indigo-600 to-indigo-800 bg-clip-text text-transparent">Digital Access</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 text-lg leading-8 text-slate-600"
-          >
-            Access the complete repository of Ethiopian proclamations and regulations. Whether you're a citizen, student, or legal professional, E-Tebeka provides the tools you need.
-          </motion.p>
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-10 flex items-center gap-x-6"
-          >
-            <Link
-              href="/search"
-              className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all active:scale-95 flex items-center gap-2"
-            >
-              <Search className="h-4 w-4" />
-              Browse Public Documents
-            </Link>
-            <Link href="/register" className="text-sm font-semibold leading-6 text-slate-900 flex items-center gap-1 group">
-              Start Free Trial <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Tiers Section */}
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 pb-32">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600 lowercase tracking-wider">Tailored Access</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Choose Your Tier</p>
-        </div>
-        
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-y-6 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8">
-          {tiers.map((tier, idx) => (
-            <motion.div
-              key={tier.name}
+      <HeroSection />
+      
+      {/* Service Categories */}
+      <ServiceCategories />
+      
+      {/* Features Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className={cn(
-                "group relative flex flex-col justify-between rounded-3xl p-8 ring-1 ring-slate-200 transition-all hover:ring-slate-300 xl:p-10 bg-white",
-                tier.featured ? "shadow-2xl ring-2 ring-indigo-600/20" : "shadow-sm"
-              )}
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4"
             >
-              <div>
-                <div className="flex items-center justify-between gap-x-4">
-                  <h3 className="text-lg font-semibold leading-8 text-slate-900">{tier.name}</h3>
-                  {tier.featured && (
-                    <p className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold leading-5 text-indigo-600 ring-1 ring-inset ring-indigo-200">
+              Why Choose E-Tebeka?
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              The most comprehensive and user-friendly platform for Ethiopian legal research
+            </motion.p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white p-6 rounded-xl border border-gray-200"
+              >
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-teal-100 rounded-lg text-teal-600 mr-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">{feature.title}</h3>
+                </div>
+                <p className="text-gray-600">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Tiers Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4"
+            >
+              Choose Your Access Level
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+            >
+              Tailored access levels for different user needs
+            </motion.p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {tiers.map((tier, idx) => (
+              <motion.div
+                key={tier.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className={`relative bg-white rounded-2xl p-8 border-2 ${
+                  tier.featured 
+                    ? "border-teal-500 shadow-xl" 
+                    : "border-gray-200"
+                }`}
+              >
+                {tier.featured && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-teal-500 text-white px-4 py-1 rounded-full text-sm font-medium">
                       Most Popular
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className={cn("rounded-2xl bg-gradient-to-br p-3", tier.color)}>
-                    {tier.icon}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{tier.price}</p>
-                    {tier.status && <p className="text-xs text-slate-500">{tier.status}</p>}
+                )}
+                
+                <div className="text-center mb-6">
+                  <div className="flex justify-center mb-4">
+                    <div className={`p-3 rounded-xl bg-gradient-to-br ${tier.color}`}>
+                      {tier.icon}
+                    </div>
                   </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
+                  <div className="text-3xl font-bold text-teal-600">{tier.price}</div>
+                  {tier.status && <p className="text-sm text-gray-500 mt-1">{tier.status}</p>}
                 </div>
-                <p className="mt-6 text-sm leading-6 text-slate-600">{tier.description}</p>
-                <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-slate-600">
+                
+                <p className="text-gray-600 mb-6">{tier.description}</p>
+                
+                <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => (
-                    <li key={feature} className="flex gap-x-3">
-                      <CheckCircle2 className="h-6 w-5 flex-none text-indigo-600" aria-hidden="true" />
-                      {feature}
+                    <li key={feature} className="flex items-start">
+                      <CheckCircle2 className="h-5 w-5 text-teal-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">{feature}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-              <Link
-                href={tier.href}
-                className={cn(
-                  "mt-8 block rounded-xl px-3 py-2 text-center text-sm font-semibold leading-6 transition-all active:scale-95",
-                  tier.featured 
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20" 
-                    : "bg-slate-50 text-slate-900 hover:bg-slate-100 ring-1 ring-inset ring-slate-200"
-                )}
-              >
-                {tier.cta}
-              </Link>
-            </motion.div>
-          ))}
+                
+                <Link
+                  href={tier.href}
+                  className={`block w-full text-center px-6 py-3 rounded-lg font-medium transition-all outline-none focus:border-teal-500 ${
+                    tier.featured
+                      ? "bg-teal-600 text-white hover:bg-teal-700"
+                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                  }`}
+                >
+                  {tier.cta}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-12">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2">
-            <Scale className="h-6 w-6 text-indigo-600" />
-            <span className="text-lg font-bold text-slate-900">E-Tebeka</span>
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="h-8 w-8 bg-teal-600 rounded-lg flex items-center justify-center">
+                  <Star className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-xl font-bold">E-Tebeka</span>
+              </div>
+              <p className="text-gray-400">
+                Ethiopia&apos;s premier digital law library, providing comprehensive access to legal documents and resources.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/search" className="hover:text-white transition-colors">Search Documents</Link></li>
+                <li><Link href="/register" className="hover:text-white transition-colors">Register</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Sign In</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/about" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/search" className="hover:text-white transition-colors">Search Guide</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">Legal Disclaimer</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>support@e-tebeka.gov.et</li>
+                <li>Addis Ababa, Ethiopia</li>
+                <li>+251 11 123 4567</li>
+              </ul>
+            </div>
           </div>
-          <div className="flex gap-8 text-sm text-slate-500">
-            <Link href="#" className="hover:text-indigo-600 transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-indigo-600 transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-indigo-600 transition-colors">Legal Disclaimer</Link>
-            <Link href="#" className="hover:text-indigo-600 transition-colors">Contact</Link>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2026 E-Tebeka Platform. All rights reserved. | Federal Supreme Court of Ethiopia</p>
           </div>
-          <p className="text-sm text-slate-400">© 2026 E-Tebeka Platform. All rights reserved.</p>
         </div>
       </footer>
     </div>

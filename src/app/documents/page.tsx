@@ -1,11 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, Tag, Clock, ChevronRight, Loader2, Filter, Gavel, FileText } from "lucide-react";
+import { BookOpen, Clock, ChevronRight, Loader2, Filter, Gavel, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import api from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+
+interface DocumentListItem {
+  id: string;
+  document_type: string;
+  document_number: string;
+  status?: string;
+  title_en: string;
+  title_am?: string;
+  year_gregorian?: number;
+}
 
 const DOC_TYPES = [
   { value: "", label: "All Types", icon: <FileText className="h-4 w-4" /> },
@@ -14,7 +24,7 @@ const DOC_TYPES = [
 ];
 
 export default function BrowsePage() {
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [docType, setDocType] = useState("");
   const [page, setPage] = useState(0);
@@ -68,7 +78,7 @@ export default function BrowsePage() {
             className={cn(
               "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
               docType === t.value
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                ? "bg-teal-600 text-white shadow-lg shadow-teal-600/20"
                 : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
             )}
           >
@@ -81,7 +91,7 @@ export default function BrowsePage() {
       {/* Document Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-32">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
         </div>
       ) : documents.length === 0 ? (
         <div className="text-center py-32 opacity-50">
@@ -92,18 +102,18 @@ export default function BrowsePage() {
       ) : (
         <AnimatePresence>
           <div className="space-y-4">
-            {documents.map((doc: any, idx: number) => (
+            {documents.map((doc, idx) => (
               <motion.div
                 key={doc.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.04 }}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 hover:border-indigo-200 hover:shadow-lg transition-all"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 hover:border-teal-200 hover:shadow-lg transition-all"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-full">
                         {doc.document_type}
                       </span>
                       <span className="text-xs text-slate-500 font-mono">#{doc.document_number}</span>
@@ -114,7 +124,7 @@ export default function BrowsePage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 transition-colors leading-tight">
                       {doc.title_en}
                     </h3>
                     {doc.title_am && (
@@ -131,7 +141,7 @@ export default function BrowsePage() {
                   </div>
                   <Link
                     href={`/documents/${doc.id}`}
-                    className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/10 transition-all active:scale-95"
+                    className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-teal-600/10 transition-all active:scale-95"
                   >
                     <BookOpen className="h-4 w-4" />
                     View Details

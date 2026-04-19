@@ -4,10 +4,11 @@ import Link from "next/link";
 import { Scale, LogIn, LogOut, Menu, X, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import type { SessionUser } from "@/lib/session";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -56,9 +57,13 @@ export default function Navbar() {
           
           {user ? (
             <div className="flex items-center gap-6">
-              {user.is_admin && (
+              {user.is_admin ? (
                 <Link href="/admin" className="text-sm font-semibold text-indigo-600 flex items-center gap-1.5">
                   <ShieldAlert className="h-4 w-4" /> Admin
+                </Link>
+              ) : (
+                <Link href={user.tier === 'A' ? '/dashboard/lawyer' : user.tier === 'B' ? '/dashboard/student' : '/dashboard/general'} className="text-sm font-semibold text-indigo-600">
+                  Dashboard
                 </Link>
               )}
               <button 
@@ -99,7 +104,11 @@ export default function Navbar() {
             <Link href="/search" className="text-lg font-medium text-slate-900" onClick={() => setIsOpen(false)}>Search</Link>
             {user ? (
               <>
-                {user.is_admin && <Link href="/admin" className="text-lg font-bold text-indigo-600" onClick={() => setIsOpen(false)}>Admin Panel</Link>}
+                {user.is_admin ? (
+                  <Link href="/admin" className="text-lg font-bold text-indigo-600" onClick={() => setIsOpen(false)}>Admin Panel</Link>
+                ) : (
+                  <Link href={user.tier === 'A' ? '/dashboard/lawyer' : user.tier === 'B' ? '/dashboard/student' : '/dashboard/general'} className="text-lg font-bold text-indigo-600" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                )}
                 <button onClick={() => { handleLogout(); setIsOpen(false); }} className="text-lg font-medium text-red-600 text-left">Logout</button>
               </>
             ) : (

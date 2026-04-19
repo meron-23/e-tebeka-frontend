@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Upload,
@@ -9,24 +8,23 @@ import {
   ShieldCheck,
   FileText,
   ArrowRight,
-  BarChart3,
-  CheckCircle2,
   Clock,
-  AlertTriangle,
 } from "lucide-react";
 import api from "@/lib/api/client";
+import { useSession } from "@/components/SessionProvider";
+import { getWelcomeName } from "@/lib/session";
 
 const adminSections = [
   {
     title: "Document Upload",
-    description: "Upload new legal PDF gazettes and process them with Gemini AI.",
+    description: "Upload new legal PDF gazettes and publish them with manual metadata review.",
     href: "/admin/documents/upload",
     icon: Upload,
-    color: "indigo",
-    gradient: "from-indigo-50 to-white",
-    border: "border-indigo-100",
-    iconBg: "bg-indigo-100/50",
-    iconColor: "text-indigo-600",
+    color: "teal",
+    gradient: "from-teal-50 to-white",
+    border: "border-teal-100",
+    iconBg: "bg-teal-100/50",
+    iconColor: "text-teal-600",
     badge: "Core",
   },
   {
@@ -56,41 +54,62 @@ const adminSections = [
 ];
 
 export default function AdminDashboard() {
-  const router = useRouter();
+  const { user } = useSession();
   const [stats, setStats] = useState({
     totalDocuments: "—",
     totalUsers: "—",
     pendingVerifications: "—",
   });
+  const [statsMessage, setStatsMessage] = useState<string | null>(null);
+  const welcomeName = getWelcomeName(user) || "Administrator";
 
   useEffect(() => {
-    // Optionally fetch quick stats from backend
+    if (!user?.is_admin) {
+      setStatsMessage("Open admin view loaded. Sign in with an admin account to load protected admin statistics and actions.");
+      return;
+    }
+
+    // Fetch quick stats from backend
     api
       .get("/admin/stats")
-      .then((r) => setStats(r.data))
-      .catch(() => {}); // graceful — stats are cosmetic
-  }, []);
+      .then((r) => {
+        setStats(r.data);
+        setStatsMessage(null);
+      })
+      .catch((err) => {
+        const isAuthError = err?.response?.status === 401;
+        if (!isAuthError) {
+          console.error("Failed to fetch admin stats:", err?.message || "Unknown error");
+        }
+        setStatsMessage("Admin page opened, but protected statistics could not be loaded right now.");
+      });
+  }, [user?.is_admin]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-16">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 py-1.5 text-xs font-semibold text-teal-700 mb-6">
             <ShieldCheck className="h-3 w-3" /> Admin Panel
           </div>
           <h1 className="text-5xl font-bold text-slate-900 font-outfit mb-3">
-            Welcome, Administrator
+            Welcome, {welcomeName}
           </h1>
           <p className="text-slate-600 text-lg">
             Manage the E-Tebeka Ethiopian Legal Repository platform.
           </p>
+          {statsMessage && (
+            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {statsMessage}
+            </div>
+          )}
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
-            { label: "Legal Documents", value: stats.totalDocuments, icon: FileText, color: "text-indigo-600" },
+            { label: "Legal Documents", value: stats.totalDocuments, icon: FileText, color: "text-teal-600" },
             { label: "Registered Users", value: stats.totalUsers, icon: Users, color: "text-emerald-600" },
             { label: "Pending Verifications", value: stats.pendingVerifications, icon: Clock, color: "text-amber-600" },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -108,11 +127,11 @@ export default function AdminDashboard() {
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {adminSections.map(
-            ({ title, description, href, icon: Icon, gradient, border, iconBg, iconColor, badge }) => (
+            ({ title, description, href, icon: Icon, border, iconBg, iconColor, badge }) => (
               <Link
                 key={href}
                 href={href}
-                className={`group relative rounded-3xl border ${border} bg-white p-7 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border-indigo-200`}
+                className={`group relative rounded-3xl border ${border} bg-white p-7 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border-teal-200`}
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className={`rounded-xl ${iconBg} p-3`}>
